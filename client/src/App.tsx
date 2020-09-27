@@ -1,6 +1,17 @@
 import React, { useEffect } from "react";
 // import logo from "./logo.svg";
 
+type Note = "c" | "d" | "e" | "f" | "g" | "a" | "b";
+const note = (note: Note, duration?: 1 | 2 | 4 | 8 | 16 | 32): string => {
+  if (duration) {
+    return `${note}${duration}`;
+  }
+  return note;
+};
+
+const n = note;
+const lick = [n("d", 8), n("e"), n("f"), n("g"), n("e", 4), n("c", 8), n("d")];
+
 const expr = `
 \\version "2.20.0"
 \\header {
@@ -10,7 +21,7 @@ const expr = `
 }
 \\score {
     \\relative c' {
-      c d e f g a bes c d ees8( e) c4 b
+      ${lick.join(" ")}
     }
     \\layout {
       clip-regions
@@ -36,7 +47,7 @@ const App: React.FC = () => {
   return (
     <div
       style={{
-        height: 100,
+        height: 200,
         width: 400,
         backgroundColor: "rgba(0,0,0,0.1)",
         display: "flex",
