@@ -1,14 +1,22 @@
 import React, { useEffect } from "react";
 
-type Note = "c" | "d" | "e" | "f" | "g" | "a" | "b";
+type Pitch = "c" | "d" | "e" | "f" | "g" | "a" | "b";
 export const note = (
-  note: Note,
-  duration?: 1 | 2 | 4 | 8 | 16 | 32
+  pitch: Pitch,
+  duration: 1 | 2 | 4 | 8 | 16 | 32
 ): string => {
   if (duration) {
-    return `${note}${duration}`;
+    return `${pitch}${duration}`;
   }
-  return note;
+  return pitch;
+};
+export const note2 = (pitch: Pitch): string => note(pitch, 2);
+export const note4 = (pitch: Pitch): string => note(pitch, 4);
+export const note8 = (pitch: Pitch): string => note(pitch, 8);
+export const note16 = (pitch: Pitch): string => note(pitch, 16);
+
+export const dot = (note: string): string => {
+  return `${note}.`;
 };
 
 export const beam = (...notes: string[]): string[] => {
@@ -28,11 +36,9 @@ const group = (...notes: Array<string | string[]>): string[] => {
   return [...notes.flat()];
 };
 
-const n = note;
-const lick: string[] = group(
-  beam(n("d", 8), n("e"), n("f"), n("g"), n("e", 4)),
-  n("c", 8),
-  n("d")
+const lick = group(
+  beam(note8("d"), note8("e"), note8("f"), note8("g"), note4("e")),
+  beam(note8("c"), note8("d"))
 );
 
 const expr = `
