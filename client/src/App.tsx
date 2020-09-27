@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 // import logo from "./logo.svg";
-import "./App.css";
 
 const expr = `
 \\version "2.20.0"
