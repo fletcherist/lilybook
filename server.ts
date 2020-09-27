@@ -1,42 +1,29 @@
 import { serve, ServerRequest } from "https://deno.land/std/http/server.ts";
 import { createHash } from "https://deno.land/std/hash/mod.ts";
+import { exists as dirExists } from "https://deno.land/std/fs/mod.ts";
 
-// const expr = `
-// \\header {
-//     title = ""
-//     composer = ""
-//     tagline = "" % remove footer
-// }
-// \\score {
-//     {
-//     \\once \\override NoteHead.output-attributes =
-//         #'((id . 123)
-//         (class . "this that")
-//         (data-whatever . something))
-//         d
-//     }
-//     \\layout {}
-// }`;
-
-const handleLilyMarkup = async (lilyText: string): Promise<string> => {
-  const layerName = "temp";
+const handleLilyMarkup = async (
+  layerName: string,
+  lilyText: string,
+): Promise<string> => {
   const outputDir = "output";
   const outputPath = `${outputDir}/${layerName}`;
-  const lilyFilePath = `${outputDir}/${layerName}.ly`;
+  const outputFilename = "out";
+  const lilyInputFilePath = `${outputPath}/${outputFilename}.ly`;
   try {
-    await Deno.remove(`${outputDir}`, { recursive: true });
+    await Deno.remove(outputPath, { recursive: true });
   } catch (error) {
     console.log(error);
   }
-  await Deno.mkdir(outputDir);
-  await Deno.writeTextFile(`./${lilyFilePath}`, lilyText);
+  await Deno.mkdir(`${outputDir}/${layerName}`);
+  await Deno.writeTextFile(`./${lilyInputFilePath}`, lilyText);
   const p = Deno.run({
     cmd: [
       "lilypond",
       "-dbackend=svg",
       "-dclip-systems",
       `--output=${outputPath}`,
-      lilyFilePath,
+      lilyInputFilePath,
     ],
     stdout: "piped",
   });
@@ -44,7 +31,8 @@ const handleLilyMarkup = async (lilyText: string): Promise<string> => {
   const status = await p.status();
   console.log("status:", status);
 
-  const svgFilePath = `./${outputDir}/${layerName}-from-1.0.1-to-999.0.1-clip.svg`;
+  const svgFilePath =
+    `./${outputDir}/${layerName}/${outputFilename}-from-1.0.1-to-999.0.1-clip.svg`;
   const svgFileText = await Deno.readTextFile(svgFilePath);
   const newSvgFileText = svgFileText
     .replaceAll("<![CDATA[", "")
@@ -63,7 +51,8 @@ const handle = async (req: ServerRequest): Promise<void> => {
     ...defaultHeaders,
   });
   if (req.method === "GET") {
-    const svgFilePath = `./output/temp-from-1.0.1-to-999.0.1-clip.svg`;
+    const hash = req.url.replace("/", "");
+    const svgFilePath = `./output/${hash}/out-from-1.0.1-to-999.0.1-clip.svg`;
     const svgFileText = await Deno.readTextFile(svgFilePath);
     return await req.respond({
       status: 200,
@@ -78,17 +67,25 @@ const handle = async (req: ServerRequest): Promise<void> => {
     const buf = await Deno.readAll(req.body);
     const text = new TextDecoder().decode(buf);
 
-    // const hash = createHash("md5");
-    // hash.update(text)
-
-    // console.log(text);
-    const svg = await handleLilyMarkup(text);
-
+    const layerName = createHash("md5").update(text).toString("hex");
+    // was already cached, dont need to do anything, return cached version
+    if (await dirExists(`./output/${layerName}`)) {
+      console.log("cached", layerName);
+      return await req.respond({
+        status: 200,
+        headers,
+        body: JSON.stringify({
+          hash: layerName,
+        }),
+      });
+    }
+    // process the input lily data and then return processed version
+    await handleLilyMarkup(layerName, text);
     return await req.respond({
       status: 200,
       headers,
       body: JSON.stringify({
-        path: svg,
+        hash: layerName,
       }),
     });
   }
