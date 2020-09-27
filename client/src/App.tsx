@@ -1,16 +1,39 @@
 import React, { useEffect } from "react";
-// import logo from "./logo.svg";
 
 type Note = "c" | "d" | "e" | "f" | "g" | "a" | "b";
-const note = (note: Note, duration?: 1 | 2 | 4 | 8 | 16 | 32): string => {
+export const note = (
+  note: Note,
+  duration?: 1 | 2 | 4 | 8 | 16 | 32
+): string => {
   if (duration) {
     return `${note}${duration}`;
   }
   return note;
 };
 
+export const beam = (...notes: string[]): string[] => {
+  return notes.map((note, index) => {
+    const isFirstNote = index === 0;
+    const isLastNote = index === notes.length - 1;
+    if (isFirstNote) {
+      return `${note}(`;
+    } else if (isLastNote) {
+      return `${note})`;
+    }
+    return note;
+  });
+};
+
+const group = (...notes: Array<string | string[]>): string[] => {
+  return [...notes.flat()];
+};
+
 const n = note;
-const lick = [n("d", 8), n("e"), n("f"), n("g"), n("e", 4), n("c", 8), n("d")];
+const lick: string[] = group(
+  beam(n("d", 8), n("e"), n("f"), n("g"), n("e", 4)),
+  n("c", 8),
+  n("d")
+);
 
 const expr = `
 \\version "2.20.0"
