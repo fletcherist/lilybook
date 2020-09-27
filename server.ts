@@ -1,5 +1,5 @@
 import { serve, ServerRequest } from "https://deno.land/std/http/server.ts";
-// https://deno.land/std@0.71.0/http/file_server.ts
+import { createHash } from "https://deno.land/std/hash/mod.ts";
 
 // const expr = `
 // \\header {
@@ -17,26 +17,6 @@ import { serve, ServerRequest } from "https://deno.land/std/http/server.ts";
 //     }
 //     \\layout {}
 // }`;
-// const expr = `
-// \\version "2.20.0"
-// \\header {
-//     title = ""
-//     composer = ""
-//     tagline = "" % remove footer
-// }
-// \\score {
-//     \\relative c' {
-//       c d e f g a bes c d ees8( e) c4 b c~ c1
-//     }
-//     \\layout {
-//       clip-regions
-//       = #(list
-//           (cons
-//            (make-rhythmic-location 1 0 0)
-//            (make-rhythmic-location 999 0 1)))
-//     }
-// }
-// `;
 
 const handleLilyMarkup = async (lilyText: string): Promise<string> => {
   const layerName = "temp";
@@ -49,7 +29,7 @@ const handleLilyMarkup = async (lilyText: string): Promise<string> => {
     console.log(error);
   }
   await Deno.mkdir(outputDir);
-  const file = await Deno.writeTextFile(`./${lilyFilePath}`, lilyText);
+  await Deno.writeTextFile(`./${lilyFilePath}`, lilyText);
   const p = Deno.run({
     cmd: [
       "lilypond",
@@ -64,8 +44,7 @@ const handleLilyMarkup = async (lilyText: string): Promise<string> => {
   const status = await p.status();
   console.log("status:", status);
 
-  const svgFilePath =
-    `./${outputDir}/${layerName}-from-1.0.1-to-999.0.1-clip.svg`;
+  const svgFilePath = `./${outputDir}/${layerName}-from-1.0.1-to-999.0.1-clip.svg`;
   const svgFileText = await Deno.readTextFile(svgFilePath);
   const newSvgFileText = svgFileText
     .replaceAll("<![CDATA[", "")
@@ -76,33 +55,52 @@ const handleLilyMarkup = async (lilyText: string): Promise<string> => {
 };
 
 const handle = async (req: ServerRequest): Promise<void> => {
-  if (req.method === "post") {
+  const defaultHeaders: Record<string, string> = {
+    "Access-Control-Allow-Headers": "*",
+    "Access-Control-Allow-Origin": "*",
+  };
+  const headers = new Headers({
+    ...defaultHeaders,
+  });
+  if (req.method === "GET") {
+    const svgFilePath = `./output/temp-from-1.0.1-to-999.0.1-clip.svg`;
+    const svgFileText = await Deno.readTextFile(svgFilePath);
     return await req.respond({
       status: 200,
+      headers: new Headers({
+        ...defaultHeaders,
+        "content-type": "image/svg+xml .svg .svgz",
+      }),
+      body: svgFileText,
+    });
+    // await req.respond({ status: 404, headers });
+  } else if (req.method === "POST") {
+    const buf = await Deno.readAll(req.body);
+    const text = new TextDecoder().decode(buf);
+
+    // const hash = createHash("md5");
+    // hash.update(text)
+
+    // console.log(text);
+    const svg = await handleLilyMarkup(text);
+
+    return await req.respond({
+      status: 200,
+      headers,
       body: JSON.stringify({
-        path: "123",
+        path: svg,
       }),
     });
   }
-  await req.respond({
-    status: 404,
-  });
+  await req.respond({ status: 403, headers });
 };
-export const server = (
-  port: number,
-): {
-  close: () => void;
-  run: () => Promise<void>;
-} => {
+export const createServer = async (port: number): Promise<void> => {
   const addr: string = `:${port}`;
   const s = serve(addr);
   console.log(`server is running on ${addr}`);
-  const run = async (): Promise<void> => {
-    for await (const req of s) {
-      handle(req).catch(console.error);
-    }
-  };
-  return { close: () => s.close(), run };
+  for await (const req of s) {
+    handle(req).catch(console.error);
+  }
 };
 
-server(8080);
+await createServer(8080);
