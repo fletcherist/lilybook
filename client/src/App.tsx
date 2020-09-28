@@ -1,87 +1,25 @@
 import React, { useEffect, useState } from "react";
+import { lickBass, theme1 } from "./Test";
 
-type Pitch = "c" | "d" | "e" | "f" | "g" | "a" | "b";
-type Duration = 1 | 2 | 4 | 8 | 16 | 32;
-export const note = (pitch: Pitch, duration: Duration): string => {
-  if (duration) {
-    return `${pitch}${duration}`;
-  }
-  return pitch;
-};
-export const note2 = (pitch: Pitch): string => note(pitch, 2);
-export const note4 = (pitch: Pitch): string => note(pitch, 4);
-export const note8 = (pitch: Pitch): string => note(pitch, 8);
-export const note16 = (pitch: Pitch): string => note(pitch, 16);
+// {
+//   \\override NoteHead.output-attributes =
+//       #'((id . 123)
+//       (class . "this that")
+//       (data-whatever . something))
+//       <<
+//         ${lilyMarkup}
+//       >>
 
-// Rest is a pause by given duration
-export const rest = (duration: Duration) => {
-  return `r${duration}`;
-};
-
-export const dot = (note: string): string => `${note}.`;
-
-export const beam = (...notes: string[]): string[] => {
-  return notes.map((note, index) => {
-    const isFirstNote = index === 0;
-    const isLastNote = index === notes.length - 1;
-    if (isFirstNote) {
-      return `${note}(`;
-    } else if (isLastNote) {
-      return `${note})`;
-    }
-    return note;
-  });
-};
-
-type NestedArray = Array<string | string[]>;
-
-export const absolute = (...notes: NestedArray): string => {
-  return `\\absolute { ${notes.flat().join(" ")} }`;
-};
-
-const group = (...notes: NestedArray): string[] => {
-  return [...notes.flat()];
-};
-
-const theme1 = group(
-  beam(note4("a"), `e'`),
-  dot(note8("d")),
-  note16("c"),
-  note16("b"),
-  note8("c"),
-  note8("a"),
-  note16("a"),
-);
-
-const lickBass = group(
-  absolute(
-    beam(
-      note4("f"),
-      note4("g"),
-      note4("a"),
-      note4("d"),
-    ),
-  ),
-);
-
+//   }
 const renderLilyTemplate = (lilyMarkup: string): string => {
+  console.log("renderLilyTemplate", lilyMarkup);
   return `
 \\version "2.20.0"
-\\header {
-    title = ""
-    composer = ""
-    tagline = "" % remove footer
-}
+
 \\score {
-    {
-    \\override NoteHead.output-attributes =
-        #'((id . 123)
-        (class . "this that")
-        (data-whatever . something))
-        \\relative c' {
-          ${lilyMarkup}
-        }
-    }
+    <<
+      ${lilyMarkup}
+    >>
     \\layout {
       clip-regions
       = #(list
@@ -157,7 +95,7 @@ const Lily: React.FC<{
 const App: React.FC = () => {
   return (
     <div>
-      <Lily data={renderLilyTemplate(theme1.join(" "))} />
+      <Lily data={renderLilyTemplate(theme1)} />
       <Lily data={renderLilyTemplate(lickBass.join(" "))} />
     </div>
   );
