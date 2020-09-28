@@ -33,39 +33,37 @@ export const beam = (...notes: string[]): string[] => {
   });
 };
 
-const group = (...notes: Array<string | string[]>): string[] => {
+type NestedArray = Array<string | string[]>;
+
+export const absolute = (...notes: NestedArray): string => {
+  return `\\absolute { ${notes.flat().join(" ")} }`;
+};
+
+const group = (...notes: NestedArray): string[] => {
   return [...notes.flat()];
 };
 
-const lick = group(
-  beam(note8("d"), note8("e"), note8("f"), note8("g"), note4("e")),
-  beam(note8("c"), note8("d")),
-  rest(4),
+const theme1 = group(
+  beam(note4("a"), `e'`),
+  dot(note8("d")),
+  note16("c"),
+  note16("b"),
+  note8("c"),
+  note8("a"),
+  note16("a"),
 );
 
 const lickBass = group(
-  note4("f"),
-  note4("g"),
-  note4("a"),
-  note4("d"),
+  absolute(
+    beam(
+      note4("f"),
+      note4("g"),
+      note4("a"),
+      note4("d"),
+    ),
+  ),
 );
 
-// const expr = `
-// \\header {
-//     title = ""
-//     composer = ""
-//     tagline = "" % remove footer
-// }
-// \\score {
-//     {
-//     \\once \\override NoteHead.output-attributes =
-//         #'((id . 123)
-//         (class . "this that")
-//         (data-whatever . something))
-//         d
-//     }
-//     \\layout {}
-// }`;
 const renderLilyTemplate = (lilyMarkup: string): string => {
   return `
 \\version "2.20.0"
@@ -75,8 +73,14 @@ const renderLilyTemplate = (lilyMarkup: string): string => {
     tagline = "" % remove footer
 }
 \\score {
-    \\relative c' {
-      ${lilyMarkup}
+    {
+    \\override NoteHead.output-attributes =
+        #'((id . 123)
+        (class . "this that")
+        (data-whatever . something))
+        \\relative c' {
+          ${lilyMarkup}
+        }
     }
     \\layout {
       clip-regions
@@ -113,23 +117,37 @@ const Lily: React.FC<{
       return null;
     }
     if (hash) {
-      return <img
-        src={`http://localhost:8080/${hash}`}
-        height="100%"
-        width="100%"
-      />;
+      return (
+        <img
+          src={`http://localhost:8080/${hash}`}
+          width={300}
+          height={300}
+        />
+      );
+      // return (
+      //   <div
+      //     style={{
+      //       background: `url(http://localhost:8080/${hash})`,
+      //       backgroundSize: "contain",
+      //       backgroundRepeat: "no-repeat",
+      //       height: "100%",
+      //       width: "100%",
+      //     }}
+      //   />
+      // );
     }
     return null;
   };
   return (
     <div
       style={{
-        height: 200,
-        width: 400,
-        backgroundColor: "rgba(0,0,0,0.05)",
+        backgroundColor: "rgba(0,0,0,0.01)",
         display: "flex",
         alignItems: "center",
-        padding: "1rem",
+        justifyContent: "center",
+        borderBottom: "1px solid rgba(0,0,0,0.1)",
+        width: "100%",
+        height: 300,
       }}
     >
       {renderSvg()}
@@ -139,7 +157,7 @@ const Lily: React.FC<{
 const App: React.FC = () => {
   return (
     <div>
-      <Lily data={renderLilyTemplate(lick.join(" "))} />
+      <Lily data={renderLilyTemplate(theme1.join(" "))} />
       <Lily data={renderLilyTemplate(lickBass.join(" "))} />
     </div>
   );

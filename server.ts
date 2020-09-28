@@ -37,7 +37,9 @@ const handleLilyMarkup = async (
   const newSvgFileText = svgFileText
     .replaceAll("<![CDATA[", "")
     .replaceAll("tspan { white-space: pre; }", "")
-    .replaceAll('<style text="style/css">', "");
+    .replaceAll('<style text="style/css">', "")
+    .replaceAll(`width="mm"`, `width="100px"`)
+    .replaceAll(`height="mm"`, `height="100px"`);
   await Deno.writeTextFile(svgFilePath, newSvgFileText);
   return newSvgFileText;
 };
