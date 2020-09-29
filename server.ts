@@ -21,7 +21,7 @@ const handleLilyMarkup = async (
     cmd: [
       "lilypond",
       "-dbackend=svg",
-      "-dclip-systems",
+      // "-dclip-systems",
       `--output=${outputPath}`,
       lilyInputFilePath,
     ],
@@ -31,15 +31,16 @@ const handleLilyMarkup = async (
   const status = await p.status();
   console.log("status:", status);
 
-  const svgFilePath =
-    `./${outputDir}/${layerName}/${outputFilename}-from-1.0.1-to-999.0.1-clip.svg`;
+  // const svgFilePath =
+  //   `./${outputDir}/${layerName}/${outputFilename}-from-1.0.1-to-999.0.1-clip.svg`;
+  const svgFilePath = `./${outputDir}/${layerName}/${outputFilename}.svg`;
   const svgFileText = await Deno.readTextFile(svgFilePath);
-  const newSvgFileText = svgFileText
-    .replaceAll("<![CDATA[", "")
-    .replaceAll("tspan { white-space: pre; }", "")
-    .replaceAll('<style text="style/css">', "")
-    .replaceAll(`width="mm"`, `width="100px"`)
-    .replaceAll(`height="mm"`, `height="100px"`);
+  const newSvgFileText = svgFileText;
+  // .replaceAll("<![CDATA[", "")
+  // .replaceAll("tspan { white-space: pre; }", "")
+  // .replaceAll('<style text="style/css">', "")
+  // .replaceAll(`width="mm"`, `width="100px"`)
+  // .replaceAll(`height="mm"`, `height="100px"`);
   await Deno.writeTextFile(svgFilePath, newSvgFileText);
   return newSvgFileText;
 };
@@ -54,7 +55,8 @@ const handle = async (req: ServerRequest): Promise<void> => {
   });
   if (req.method === "GET") {
     const hash = req.url.replace("/", "");
-    const svgFilePath = `./output/${hash}/out-from-1.0.1-to-999.0.1-clip.svg`;
+    // const svgFilePath = `./output/${hash}/out-from-1.0.1-to-999.0.1-clip.svg`;
+    const svgFilePath = `./output/${hash}/out.svg`;
     const svgFileText = await Deno.readTextFile(svgFilePath);
     return await req.respond({
       status: 200,
