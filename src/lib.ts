@@ -50,11 +50,14 @@ export const group = (...notes: NestedArray): string[] => {
   return [...notes.flat()];
 };
 
-export const staff = (options: {
-  clef: "treble" | "bass";
-  time: Time;
-  key: [Pitch, "major" | "minor"];
-}, notes: string[]) => {
+export const staff = (
+  options: {
+    clef: "treble" | "bass";
+    time: Time;
+    key: [Pitch, "major" | "minor"];
+  },
+  notes: string[]
+) => {
   const [pitch, scale] = options.key;
   return `\\new Staff {
         \\clef ${options.clef}

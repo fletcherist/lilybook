@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 // also exported from '@storybook/react' if you can deal with breaking changes in 6.1
 import { Story, Meta } from "@storybook/react/types-6-0";
 
-import { lickBass, theme1 } from "./Test";
+import { lickBass, theme1 } from "./nocturne";
 
 // {
 //   \\override NoteHead.output-attributes =
@@ -25,7 +25,7 @@ import { lickBass, theme1 } from "./Test";
 const renderLilyTemplate = (lilyMarkup: string): string => {
   console.log("renderLilyTemplate", lilyMarkup);
   return `
-#(set-global-staff-size 30)
+#(set-global-staff-size 50)
 \\version "2.20.0"
 \\language "english"
 \\header {
@@ -53,7 +53,7 @@ const Lily: React.FC<{
         body: data,
         method: "POST",
       });
-      const json = await res.json() as { hash: string };
+      const json = (await res.json()) as { hash: string };
       setIsLoading(false);
       setHash(json.hash);
       console.log(json);
