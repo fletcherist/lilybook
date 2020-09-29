@@ -13,6 +13,10 @@ export const note2 = (pitch: Pitch): string => note(pitch, 2);
 export const note4 = (pitch: Pitch): string => note(pitch, 4);
 export const note8 = (pitch: Pitch): string => note(pitch, 8);
 export const note16 = (pitch: Pitch): string => note(pitch, 16);
+// @todo: add double sharp
+export const sharp = (note: string): string => `${note}/-sharp`;
+// @todo: add double flat
+export const flat = (note: string): string => `${note}/-flat`;
 
 // Rest is a pause by given duration
 export const rest = (duration: Duration) => {
@@ -56,7 +60,6 @@ export const staff = (options: {
         \\clef ${options.clef}
         \\time ${options.time}
         \\key ${pitch} \\${scale}
-
-        ${notes.join(" ")}
+        \\relative c' { ${notes.join(" ")} }
     }`;
 };

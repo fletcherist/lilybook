@@ -15,7 +15,7 @@ const renderLilyTemplate = (lilyMarkup: string): string => {
   console.log("renderLilyTemplate", lilyMarkup);
   return `
 \\version "2.20.0"
-
+\\language "english"
 \\score {
     <<
       ${lilyMarkup}
