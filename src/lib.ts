@@ -9,6 +9,10 @@ interface Note {
 
   sharp?: boolean;
   flat?: boolean;
+
+  doublesharp?: boolean;
+  doubleflat?: boolean;
+
   dot?: boolean;
   beamStart?: boolean;
   beamEnd?: boolean;
@@ -58,14 +62,11 @@ export const note2 = (pitch: Pitch): Note => note(pitch, 2);
 export const note4 = (pitch: Pitch): Note => note(pitch, 4);
 export const note8 = (pitch: Pitch): Note => note(pitch, 8);
 export const note16 = (pitch: Pitch): Note => note(pitch, 16);
-// @todo: add double sharp
-export const sharp = (note: Note): Note => {
-  return { ...note, sharp: true };
-};
-// @todo: add double flat
-export const flat = (note: Note): Note => {
-  return { ...note, flat: true };
-};
+
+export const sharp = (note: Note): Note => ({ ...note, sharp: true });
+export const flat = (note: Note): Note => ({ ...note, flat: true });
+export const doublesharp = (note: Note): Note => ({ ...note, doublesharp: true });
+export const doubleflat = (note: Note): Note => ({ ...note, doubleflat: true });
 
 type DurationString = '1' | '1/2' | '1/4' | '1/8' | '1/16' | '1/32';
 // Rest is a pause by given duration
@@ -91,6 +92,10 @@ export const render = (group: Group): string => {
       return `${note.pitch}-sharp`;
     } else if (note.flat) {
       return `${note.pitch}-flat`;
+    } else if (note.doublesharp) {
+      return `${note.pitch}-sharpsharp`;
+    } else if (note.doubleflat) {
+      return `${note.pitch}-flatflat`;
     }
     return `${note.pitch}`;
   };
