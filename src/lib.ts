@@ -19,20 +19,37 @@ interface Rest {
   duration: Duration;
 }
 
-type Modifier = 'default' | 'beam' | 'chord' | 'absolute' | 'relative';
-
 type Item = Note | Rest;
-type GroupChildren = Group | Item;
-interface Group {
+
+interface GroupDefault {
   type: 'group';
-  children: Array<GroupChildren>;
-  modifier: Modifier;
+  modifier: 'default';
+  children: GroupChildren[];
+}
+interface GroupBeam {
+  type: 'group';
+  modifier: 'beam';
+  children: GroupChildren[];
+}
+interface GroupAbsolute {
+  type: 'group';
+  modifier: 'absolute';
+  children: GroupChildren[];
+}
+interface GroupRelative {
+  type: 'group';
+  modifier: 'relative';
+  children: GroupChildren[];
 }
 interface GroupChord {
   type: 'group';
   modifier: 'chord';
   children: Note[];
 }
+
+type Group = GroupChord | GroupDefault | GroupBeam | GroupRelative | GroupAbsolute;
+type GroupChildren = Group | Item;
+type Modifier = Group['modifier'];
 
 export const note = (pitch: Pitch, duration: Duration): Note => {
   return { type: 'note', pitch, duration };
@@ -66,31 +83,36 @@ export const rest = (duration: DurationString): Rest => {
 
 export const dot = (note: Note): Note => {
   return { ...note, dot: true };
-  // `${note}.`
 };
 
 export const render = (group: Group): string => {
+  const renderNotePitch = (note: Note): string => {
+    if (note.sharp) {
+      return `${note.pitch}-sharp`;
+    } else if (note.flat) {
+      return `${note.pitch}-flat`;
+    }
+    return `${note.pitch}`;
+  };
+  const renderNoteDot = (note: Note): string => {
+    return note.dot ? `.` : '';
+  };
   const renderNote = (note: Item): string => {
-    const renderPitch = (note: Note): string => {
-      if (note.sharp) {
-        return `${note.pitch}-sharp`;
-      } else if (note.flat) {
-        return `${note.pitch}-flat`;
-      }
-      return `${note.pitch}`;
-    };
-    const renderBeam = (note: Note): string | undefined => {
+    const renderBeam = (note: Note): string => {
       if (note.beamStart) {
         return `(`;
       } else if (note.beamEnd) {
         return ')';
       }
-      return undefined;
+      return '';
     };
     if (note.type === 'note') {
-      return [renderPitch(note), note.duration, note.dot && `.`, renderBeam(note)]
-        .filter(Boolean)
-        .join('');
+      return [
+        renderNotePitch(note),
+        note.duration,
+        renderNoteDot(note),
+        renderBeam(note),
+      ].join('');
     } else if (note.type === 'rest') {
       return `r${note.duration}`;
     } else {
@@ -99,15 +121,24 @@ export const render = (group: Group): string => {
   };
 
   const renderGroup = (group: Group) => {
-    return group.children
-      .map((item) => {
-        if (item.type === 'group') {
-          return render(item);
-        } else {
-          return renderNote(item);
-        }
-      })
-      .join(' ');
+    if (group.modifier === 'chord') {
+      const firstNote = group.children[0];
+      return `<${group.children
+        .map((note) => {
+          return renderNotePitch(note);
+        })
+        .join(' ')}>${firstNote.duration}${renderNoteDot(firstNote)}`;
+    } else {
+      return group.children
+        .map((item) => {
+          if (item.type === 'group') {
+            return render(item);
+          } else {
+            return renderNote(item);
+          }
+        })
+        .join(' ');
+    }
   };
 
   if (group.modifier === 'default') {
@@ -121,24 +152,16 @@ export const render = (group: Group): string => {
   } else if (group.modifier === 'chord') {
     return `${renderGroup(group)}`;
   } else {
-    throw new Error(`Group modifier ${group.modifier} is not supported`);
+    throw new Error(`Group ${JSON.stringify(group)} is not supported`);
   }
 };
 
-const createGroup = (type: Modifier, ...children: GroupChildren[]): Group => {
-  return {
-    type: 'group',
-    modifier: type,
-    children: children,
-  };
-};
-
 // group without modifiers
-export const group = (...notes: GroupChildren[]): Group => {
-  return createGroup('default', ...notes);
+export const group = (...children: GroupChildren[]): GroupDefault => {
+  return { type: 'group', children, modifier: 'default' };
 };
 
-export const beam = (...notes: GroupChildren[]): Group => {
+export const beam = (...notes: GroupChildren[]): GroupBeam => {
   const beamNotes = notes.map((note, index) => {
     const isFirstNote = index === 0;
     const isLastNote = index === notes.length - 1;
@@ -158,17 +181,16 @@ export const beam = (...notes: GroupChildren[]): Group => {
   };
 };
 
-export const absolute = (...notes: GroupChildren[]): Group => {
-  return createGroup('absolute', ...notes);
+export const absolute = (...children: GroupChildren[]): GroupAbsolute => {
+  return { type: 'group', children, modifier: 'absolute' };
 };
 
-export const relative = (...notes: GroupChildren[]): Group => {
-  return createGroup('relative', ...notes);
+export const relative = (...children: GroupChildren[]): GroupRelative => {
+  return { type: 'group', children, modifier: 'relative' };
 };
 
-export const chord = (...notes: Note[]): Group => {
-  // return `<${notes.flat().join(' ')}>`;
-  return createGroup('chord', ...notes);
+export const chord = (...notes: Note[]): GroupChord => {
+  return { type: 'group', children: notes, modifier: 'chord' };
 };
 
 export const staff = (
