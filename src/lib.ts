@@ -17,8 +17,9 @@ interface Note {
   octaveDown?: number;
 
   dot?: boolean;
-  beamStart?: boolean;
-  beamEnd?: boolean;
+  tie?: boolean;
+  slurStart?: boolean;
+  slurEnd?: boolean;
 }
 
 interface Rest {
@@ -102,6 +103,10 @@ export const dot = (note: Note): Note => {
   return { ...note, dot: true };
 };
 
+export const tie = (note: Note): Note => {
+  return { ...note, tie: true };
+};
+
 export const render = (group: Group): string => {
   const renderNotePitch = (note: Note): string => {
     if (note.sharp) {
@@ -131,10 +136,10 @@ export const render = (group: Group): string => {
     return note.dot ? `.` : '';
   };
   const renderNote = (note: Item): string => {
-    const renderBeam = (note: Note): string => {
-      if (note.beamStart) {
+    const renderSlur = (note: Note): string => {
+      if (note.slurStart) {
         return `(`;
-      } else if (note.beamEnd) {
+      } else if (note.slurEnd) {
         return ')';
       }
       return '';
@@ -145,7 +150,8 @@ export const render = (group: Group): string => {
         renderNoteOctave(note),
         note.duration,
         renderNoteDot(note),
-        renderBeam(note),
+        note.tie ? '~' : '',
+        renderSlur(note),
       ].join('');
     } else if (note.type === 'rest') {
       return `r${note.duration}`;
@@ -195,22 +201,20 @@ export const group = (...children: GroupChildren[]): GroupDefault => {
   return { type: 'group', children, modifier: 'default' };
 };
 
-export const beam = (...notes: GroupChildren[]): GroupBeam => {
-  const beamNotes = notes.map((note, index) => {
+export const slur = (...notes: GroupChildren[]): GroupBeam => {
+  const slurNotes = notes.map((note, index) => {
     const isFirstNote = index === 0;
     const isLastNote = index === notes.length - 1;
     if (isFirstNote) {
-      // return `${note}(`;
-      return { ...note, beamStart: true };
+      return { ...note, slurStartt: true };
     } else if (isLastNote) {
-      // return `${note})`;
-      return { ...note, beamEnd: true };
+      return { ...note, slurEnd: true };
     }
     return note;
   });
   return {
     type: 'group',
-    children: beamNotes,
+    children: slurNotes,
     modifier: 'beam',
   };
 };
