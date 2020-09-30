@@ -13,6 +13,9 @@ interface Note {
   doublesharp?: boolean;
   doubleflat?: boolean;
 
+  octaveUp?: number;
+  octaveDown?: number;
+
   dot?: boolean;
   beamStart?: boolean;
   beamEnd?: boolean;
@@ -53,7 +56,14 @@ interface GroupChord {
 
 type Group = GroupChord | GroupDefault | GroupBeam | GroupRelative | GroupAbsolute;
 type GroupChildren = Group | Item;
-type Modifier = Group['modifier'];
+
+const range = (start: number, end: number): number[] => {
+  const res = [];
+  for (let i = start; i <= end; i++) {
+    res.push(i);
+  }
+  return res;
+};
 
 export const note = (pitch: Pitch, duration: Duration): Note => {
   return { type: 'note', pitch, duration };
@@ -67,6 +77,12 @@ export const sharp = (note: Note): Note => ({ ...note, sharp: true });
 export const flat = (note: Note): Note => ({ ...note, flat: true });
 export const doublesharp = (note: Note): Note => ({ ...note, doublesharp: true });
 export const doubleflat = (note: Note): Note => ({ ...note, doubleflat: true });
+export const up = (note: Note, times: number): Note => {
+  return { ...note, octaveUp: times };
+};
+export const down = (note: Note, times: number): Note => {
+  return { ...note, octaveDown: times };
+};
 
 type DurationString = '1' | '1/2' | '1/4' | '1/8' | '1/16' | '1/32';
 // Rest is a pause by given duration
@@ -99,6 +115,18 @@ export const render = (group: Group): string => {
     }
     return `${note.pitch}`;
   };
+  const renderNoteOctave = (note: Note): string => {
+    if (note.octaveUp) {
+      return range(0, note.octaveUp)
+        .map(() => `'`)
+        .join('');
+    } else if (note.octaveDown) {
+      return range(0, note.octaveDown)
+        .map(() => `,`)
+        .join('');
+    }
+    return '';
+  };
   const renderNoteDot = (note: Note): string => {
     return note.dot ? `.` : '';
   };
@@ -114,6 +142,7 @@ export const render = (group: Group): string => {
     if (note.type === 'note') {
       return [
         renderNotePitch(note),
+        renderNoteOctave(note),
         note.duration,
         renderNoteDot(note),
         renderBeam(note),
@@ -130,7 +159,7 @@ export const render = (group: Group): string => {
       const firstNote = group.children[0];
       return `<${group.children
         .map((note) => {
-          return renderNotePitch(note);
+          return [renderNotePitch(note), renderNoteOctave(note)].join('');
         })
         .join(' ')}>${firstNote.duration}${renderNoteDot(firstNote)}`;
     } else {
