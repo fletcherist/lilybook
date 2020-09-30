@@ -34,10 +34,6 @@ interface GroupChord {
 }
 
 export const note = (pitch: Pitch, duration: Duration): Note => {
-  // if (duration) {
-  //   return `${pitch}${duration}`;
-  // }
-  // return pitch;
   return { type: 'note', pitch, duration };
 };
 export const note2 = (pitch: Pitch): Note => note(pitch, 2);
@@ -50,13 +46,11 @@ export const sharp = (note: Note): Note => {
 };
 // @todo: add double flat
 export const flat = (note: Note): Note => {
-  // return `${note}/-flat`;
   return { ...note, flat: true };
 };
 
 // Rest is a pause by given duration
 export const rest = (duration: Duration): Rest => {
-  // return `r${duration}`;
   return { type: 'rest', duration };
 };
 
@@ -65,26 +59,13 @@ export const dot = (note: Note): Note => {
   // `${note}.`
 };
 
-// export const beam = (...notes: string[]): string[] => {
-//   return notes.map((note, index) => {
-//     const isFirstNote = index === 0;
-//     const isLastNote = index === notes.length - 1;
-//     if (isFirstNote) {
-//       return `${note}(`;
-//     } else if (isLastNote) {
-//       return `${note})`;
-//     }
-//     return note;
-//   });
-// };
-
 export const render = (group: Group): string => {
   const renderNote = (note: Note): string => {
     const renderPitch = (note: Note): string => {
       if (note.sharp) {
-        return `${note.pitch}/-sharp`;
+        return `${note.pitch}-sharp`;
       } else if (note.flat) {
-        return `${note.pitch}/-flat`;
+        return `${note.pitch}-flat`;
       }
       return `${note.pitch}`;
     };
@@ -118,6 +99,8 @@ export const render = (group: Group): string => {
   } else if (group.modifier === 'relative') {
     return `\\relative { ${renderGroup(group)} }`;
   } else if (group.modifier === 'beam') {
+    return `${renderGroup(group)}`;
+  } else if (group.modifier === 'chord') {
     return `${renderGroup(group)}`;
   } else {
     throw new Error(`Group modifier ${group.modifier} is not supported`);
