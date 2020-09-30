@@ -21,10 +21,11 @@ interface Rest {
 
 type Modifier = 'default' | 'beam' | 'chord' | 'absolute' | 'relative';
 
-type Item = Group | Note | Rest;
+type Item = Note | Rest;
+type GroupChildren = Group | Item;
 interface Group {
   type: 'group';
-  children: Array<Note | Group | Rest>;
+  children: Array<GroupChildren>;
   modifier: Modifier;
 }
 interface GroupChord {
@@ -49,9 +50,18 @@ export const flat = (note: Note): Note => {
   return { ...note, flat: true };
 };
 
+type DurationString = '1' | '1/2' | '1/4' | '1/8' | '1/16' | '1/32';
 // Rest is a pause by given duration
-export const rest = (duration: Duration): Rest => {
-  return { type: 'rest', duration };
+export const rest = (duration: DurationString): Rest => {
+  const durationStringMap: Record<DurationString, Duration> = {
+    '1': 1,
+    '1/2': 2,
+    '1/4': 4,
+    '1/8': 8,
+    '1/16': 16,
+    '1/32': 32,
+  };
+  return { type: 'rest', duration: durationStringMap[duration] };
 };
 
 export const dot = (note: Note): Note => {
@@ -60,7 +70,7 @@ export const dot = (note: Note): Note => {
 };
 
 export const render = (group: Group): string => {
-  const renderNote = (note: Note): string => {
+  const renderNote = (note: Item): string => {
     const renderPitch = (note: Note): string => {
       if (note.sharp) {
         return `${note.pitch}-sharp`;
@@ -69,24 +79,32 @@ export const render = (group: Group): string => {
       }
       return `${note.pitch}`;
     };
-    const renderBeam = (note: Note): string => {
+    const renderBeam = (note: Note): string | undefined => {
       if (note.beamStart) {
         return `(`;
       } else if (note.beamEnd) {
         return ')';
       }
-      return '';
+      return undefined;
     };
-    return [renderPitch(note), note.duration, renderBeam(note)].filter(Boolean).join('');
+    if (note.type === 'note') {
+      return [renderPitch(note), note.duration, note.dot && `.`, renderBeam(note)]
+        .filter(Boolean)
+        .join('');
+    } else if (note.type === 'rest') {
+      return `r${note.duration}`;
+    } else {
+      throw new Error(`unexpected note type ${JSON.stringify(note)}`);
+    }
   };
 
   const renderGroup = (group: Group) => {
     return group.children
       .map((item) => {
-        if (item.type === 'note') {
-          return renderNote(item);
-        } else if (item.type === 'group') {
+        if (item.type === 'group') {
           return render(item);
+        } else {
+          return renderNote(item);
         }
       })
       .join(' ');
@@ -107,7 +125,7 @@ export const render = (group: Group): string => {
   }
 };
 
-const createGroup = (type: Modifier, ...children: Item[]): Group => {
+const createGroup = (type: Modifier, ...children: GroupChildren[]): Group => {
   return {
     type: 'group',
     modifier: type,
@@ -116,11 +134,11 @@ const createGroup = (type: Modifier, ...children: Item[]): Group => {
 };
 
 // group without modifiers
-export const group = (...notes: Item[]): Group => {
+export const group = (...notes: GroupChildren[]): Group => {
   return createGroup('default', ...notes);
 };
 
-export const beam = (...notes: Item[]): Group => {
+export const beam = (...notes: GroupChildren[]): Group => {
   const beamNotes = notes.map((note, index) => {
     const isFirstNote = index === 0;
     const isLastNote = index === notes.length - 1;
@@ -140,11 +158,11 @@ export const beam = (...notes: Item[]): Group => {
   };
 };
 
-export const absolute = (...notes: Item[]): Group => {
+export const absolute = (...notes: GroupChildren[]): Group => {
   return createGroup('absolute', ...notes);
 };
 
-export const relative = (...notes: Item[]): Group => {
+export const relative = (...notes: GroupChildren[]): Group => {
   return createGroup('relative', ...notes);
 };
 
